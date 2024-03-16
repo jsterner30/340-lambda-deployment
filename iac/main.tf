@@ -103,7 +103,6 @@ resource "aws_api_gateway_resource" "root" {
 module "root_cors" {
   source = "squidfunk/api-gateway-enable-cors/aws"
   version = "0.3.3"
-
   api_id          = aws_api_gateway_rest_api.tweeter_api_gateway.id
   api_resource_id = aws_api_gateway_resource.root.id
 }
@@ -190,14 +189,6 @@ resource "aws_api_gateway_integration_response" "integration_response_500" {
   ]
 }
 
-resource "aws_api_gateway_deployment" "deployment" {
-  depends_on = [
-    aws_api_gateway_integration.lambda_integration,
-  ]
-  rest_api_id = aws_api_gateway_rest_api.tweeter_api_gateway.id
-  stage_name = "dev"
-}
-
 resource "aws_api_gateway_documentation_part" "endpoint_documentation" {
   count = length(var.lambda_functions)
   rest_api_id = aws_api_gateway_rest_api.tweeter_api_gateway.id
@@ -251,4 +242,26 @@ data "aws_api_gateway_export" "example" {
 resource "local_file" "api_swagger_file" {
   filename = "api_swagger.json"
   content  = data.aws_api_gateway_export.example.body
+}
+
+resource "aws_api_gateway_deployment" "deployment" {
+  depends_on = [
+    aws_api_gateway_integration.lambda_integration,
+    aws_api_gateway_resource.root,
+    aws_api_gateway_resource.endpoint,
+    aws_api_gateway_method.endpoint_methods,
+    aws_api_gateway_method_response.method_response_200,
+    aws_api_gateway_integration_response.integration_response_200,
+    aws_api_gateway_integration_response.integration_response_400,
+    aws_api_gateway_integration_response.integration_response_500,
+    aws_iam_role.lambda_role,
+    aws_lambda_layer_version.deps_layer,
+    aws_lambda_function.lambda,
+    aws_api_gateway_rest_api.tweeter_api_gateway,
+    module.root_cors,
+    module.cors,
+  ]
+
+  rest_api_id = aws_api_gateway_rest_api.tweeter_api_gateway.id
+  stage_name = "dev"
 }
