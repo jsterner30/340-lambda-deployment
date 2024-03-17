@@ -147,6 +147,38 @@ resource "aws_api_gateway_method_response" "method_response_200" {
   }
 }
 
+resource "aws_api_gateway_method_response" "method_response_400" {
+  count = length(var.lambda_functions)
+  rest_api_id = aws_api_gateway_rest_api.tweeter_api_gateway.id
+  resource_id = aws_api_gateway_resource.endpoint[count.index].id
+  http_method = aws_api_gateway_method.endpoint_methods[count.index].http_method
+  status_code = "400"
+
+  response_models = {
+    "application/json" = "Error"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
+
+resource "aws_api_gateway_method_response" "method_response_403" {
+  count = length(var.lambda_functions)
+  rest_api_id = aws_api_gateway_rest_api.tweeter_api_gateway.id
+  resource_id = aws_api_gateway_resource.endpoint[count.index].id
+  http_method = aws_api_gateway_method.endpoint_methods[count.index].http_method
+  status_code = "403"
+
+  response_models = {
+    "application/json" = "Error"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
+
 resource "aws_api_gateway_integration_response" "integration_response_200" {
   count = length(var.lambda_functions)
   rest_api_id = aws_api_gateway_rest_api.tweeter_api_gateway.id
@@ -174,6 +206,27 @@ resource "aws_api_gateway_integration_response" "integration_response_400" {
     aws_api_gateway_method.endpoint_methods,
     aws_api_gateway_integration.lambda_integration
   ]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'*'"
+  }
+}
+
+resource "aws_api_gateway_integration_response" "integration_response_403" {
+  count = length(var.lambda_functions)
+  rest_api_id = aws_api_gateway_rest_api.tweeter_api_gateway.id
+  resource_id = aws_api_gateway_resource.endpoint[count.index].id
+  http_method = aws_api_gateway_method.endpoint_methods[count.index].http_method
+  status_code = 403
+  selection_pattern = "^\\[Auth Error\\].*"
+  depends_on  = [
+    aws_api_gateway_method.endpoint_methods,
+    aws_api_gateway_integration.lambda_integration
+  ]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'*'"
+  }
 }
 
 resource "aws_api_gateway_integration_response" "integration_response_500" {
@@ -187,6 +240,10 @@ resource "aws_api_gateway_integration_response" "integration_response_500" {
     aws_api_gateway_method.endpoint_methods,
     aws_api_gateway_integration.lambda_integration
   ]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'*'"
+  }
 }
 
 resource "aws_api_gateway_documentation_part" "endpoint_documentation" {
