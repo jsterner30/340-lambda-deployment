@@ -163,6 +163,21 @@ resource "aws_api_gateway_method_response" "method_response_400" {
   }
 }
 
+resource "aws_api_gateway_method_response" "method_response_500" {
+  count = length(var.lambda_functions)
+  rest_api_id = aws_api_gateway_rest_api.tweeter_api_gateway.id
+  resource_id = aws_api_gateway_resource.endpoint[count.index].id
+  http_method = aws_api_gateway_method.endpoint_methods[count.index].http_method
+  status_code = "500"
+
+  response_models = {
+    "application/json" = "Error"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
 resource "aws_api_gateway_method_response" "method_response_403" {
   count = length(var.lambda_functions)
   rest_api_id = aws_api_gateway_rest_api.tweeter_api_gateway.id
@@ -201,7 +216,7 @@ resource "aws_api_gateway_integration_response" "integration_response_400" {
   resource_id = aws_api_gateway_resource.endpoint[count.index].id
   http_method = aws_api_gateway_method.endpoint_methods[count.index].http_method
   status_code = 400
-  selection_pattern = "^\\[Bad Request\\].*"
+  selection_pattern = ".*\"status\":400.*"
   depends_on  = [
     aws_api_gateway_method.endpoint_methods,
     aws_api_gateway_integration.lambda_integration
@@ -218,7 +233,7 @@ resource "aws_api_gateway_integration_response" "integration_response_403" {
   resource_id = aws_api_gateway_resource.endpoint[count.index].id
   http_method = aws_api_gateway_method.endpoint_methods[count.index].http_method
   status_code = 403
-  selection_pattern = "^\\[Auth Error\\].*"
+  selection_pattern = ".*\"status\":403.*"
   depends_on  = [
     aws_api_gateway_method.endpoint_methods,
     aws_api_gateway_integration.lambda_integration
@@ -235,7 +250,7 @@ resource "aws_api_gateway_integration_response" "integration_response_500" {
   resource_id = aws_api_gateway_resource.endpoint[count.index].id
   http_method = aws_api_gateway_method.endpoint_methods[count.index].http_method
   status_code = 500
-  selection_pattern = "^\\[Internal Server Error\\].*"
+  selection_pattern = ".*\"status\":500.*"
   depends_on  = [
     aws_api_gateway_method.endpoint_methods,
     aws_api_gateway_integration.lambda_integration
