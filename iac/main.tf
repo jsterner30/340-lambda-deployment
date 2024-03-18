@@ -305,15 +305,13 @@ output "api_url" {
   value = aws_api_gateway_deployment.deployment.invoke_url
 }
 
-data "aws_api_gateway_export" "example" {
+resource "aws_api_gateway_documentation_version" "tweeter_documentation" {
+  version     = "1.0.0"
   rest_api_id = aws_api_gateway_rest_api.tweeter_api_gateway.id
-  stage_name  = aws_api_gateway_deployment.deployment.stage_name
-  export_type = "swagger"
-}
-
-resource "local_file" "api_swagger_file" {
-  filename = "api_swagger.json"
-  content  = data.aws_api_gateway_export.example.body
+  description = "Tweeter API Docs"
+  depends_on  = [
+    aws_api_gateway_documentation_part.endpoint_documentation,
+  ]
 }
 
 resource "aws_api_gateway_deployment" "deployment" {
